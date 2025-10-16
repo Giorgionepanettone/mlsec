@@ -57,7 +57,7 @@ def main():
     rf_model_multi.fit(train_x, train_y_multi)
     print(f'Random Forest Binary Test Accuracy: {rf_model_binary.score(test_x, test_y)}')
     print(f'Random Forest Multi Test Accuracy: {rf_model_multi.score(test_x, test_y_multi)}')
-    return
+    
     # Create and train DNN models w/ pytorch
     nn_models = {}
     # create and train one DNN (binary) for each learning rate specified
