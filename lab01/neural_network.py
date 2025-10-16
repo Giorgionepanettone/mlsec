@@ -48,6 +48,7 @@ class NeuralNetwork(nn.Module):
 
     def forward(self, x):
         """ implement forward pass method """
+        return self.model()
         # TODO
 
     def _pred(self, outputs):
