@@ -41,24 +41,39 @@ class NeuralNetwork(nn.Module):
         self.device = get_torch_device()
         self.optimizer_type = optimizer
         # create architecture based on shape and activations. Suggestion: see Sequential module
-        # TODO
+
+        layers = [nn.Linear(x,y) for x,y in zip(shape[:-1], shape[1:])]
+
+        activations = [act_dict[x]() for x in activations]
+
+        final_structure = list(itertools.chain.fromIterable(zip(layers, activations)))
+        final_structure.insert(2, nn.Dropout())
+        
+        self.model = nn.Sequential(
+            *final_structure
+        ).to(self.device)
         # If loss_fn is None, setup loss function based on task (binary vs multiclass), otherwise use loss_fn
-        # TODO
+        if loss_fn is None:
+            self.loss_fn = F.binary_cross_entropy if self.is_binary else F.cross_entropy
+        else:
+            self.loss_fn = loss_fn
 
 
     def forward(self, x):
         """ implement forward pass method """
         return self.model()
-        # TODO
 
     def _pred(self, outputs):
         """ Helper function. Transform model's outputs into binary predictions (if model is binary classifier)
             or index of highest probability class (argmax) otherwise """
-        # TODO
+        if self.is_binary:
+            return (outputs >= 0.5) * 1
+        
+        return torch.argmax(outputs, dim=1)
 
     def predict(self, x):
         """ predict labels. 0 or 1 if binary, top class (argmax) otherwise """
-        # TODO
+        return self._pred(x)
 
     def fit(self, trainloader, valloader, lr, epochs, val_interval=10):
         """ fit (train) the model
@@ -72,15 +87,26 @@ class NeuralNetwork(nn.Module):
         """
         loss_history = {'train': [], 'val': []}
         acc_history = {'train': [], 'val': []}
+        optimizer = self.optimizer_type(self.parameters(), lr=lr, weight_decay=1e-5)
         self.train()
+        
         # pretty progress bar
         with tqdm(range(epochs), desc=f'Training DNN model with lr {lr}', file=sys.stdout) as pbar:
             val_acc, val_loss = 0., 0.
             for epoch in pbar:
                 accuracy, running_loss = 0., 0.
                 # iterate over all minibatches and update parameters
-                for ...
-                    # TODO
+                for x_batch, y_batch in trainloader:
+                    pred = self(x_batch)
+
+                    loss = self.loss_fn(x_batch, y_batch)
+
+                    loss.backward()
+
+                    optimizer.step()
+
+                    optimizer.zero_grad()
+
                     running_loss += loss.item()
                     accuracy += (self._pred(pred) == y_batch).sum().item() / x_batch.shape[0]
 
@@ -111,8 +137,15 @@ class NeuralNetwork(nn.Module):
         # we don't want to compute any gradiends here, we're just testing
         with torch.no_grad():
             # iterate over test minibatches and compute accuracy
-            for ...
-                # TODO
+            for x_batch, y_batch in testloader:
+                x_batch, y_batch = x_batch.to(self.device), y_batch.to(self.device)
+                prediction = self(x_batch)
+                
+                correct += (self._pred(x_batch) == y_batch).sum()
+
+                if compute_loss:
+                    loss += self.loss_fn(prediction, y_batch)
+                total += x_batch.shape[0]
         # return accuracy and loss if requested, otherwise only accuracy
         accuracy = correct/total
         if compute_loss:

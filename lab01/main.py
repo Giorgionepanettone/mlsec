@@ -8,6 +8,11 @@ from dataset import DatasetInterface
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 
+from neural_network import NeuralNetwork
+from dataset import DatasetInterface
+from neural_network import get_torch_device
+
+
 def plot_loss_acc(train_history, multiclass=False):
     """ plots training and validation loss and accuracy curves"""
     fig, axes = plt.subplots(1, 2, figsize=(12, 4))
@@ -33,14 +38,14 @@ def main():
     print(f'Dataset loaded.\n{dataset.info()}')
 
     # Create and train traditional ML models: DecisionTree, RandomForest (others if you want)
-    # TODO decision tree setup
+    
     train_x, train_y = dataset.trainset()
     _, train_y_multi = dataset.trainset(multiclass=True)
     test_x, test_y = dataset.testset()
     _, test_y_multi = dataset.testset(multiclass=True)
 
     print('Fitting Decision Tree Classifiers')
-    # TODO decision tree training
+    
     dt_model_binary = DecisionTreeClassifier(random_state=42)
     dt_model_multi = DecisionTreeClassifier(random_state=42)
     dt_model_binary.fit(train_x, train_y)
@@ -48,20 +53,22 @@ def main():
     print(f'Decision Tree Binary Test Accuracy: {dt_model_binary.score(test_x, test_y)}')
     print(f'Decision Tree Multi Test Accuracy: {dt_model_multi.score(test_x, test_y_multi)}')
 
-    # TODO random forest setup
+   
     rf_model_binary = RandomForestClassifier(random_state=42)
     rf_model_multi = RandomForestClassifier(random_state=42)
     print('Fitting Random Forest Classifiers')
-    # TODO random forest training
+
     rf_model_binary.fit(train_x, train_y)
     rf_model_multi.fit(train_x, train_y_multi)
     print(f'Random Forest Binary Test Accuracy: {rf_model_binary.score(test_x, test_y)}')
     print(f'Random Forest Multi Test Accuracy: {rf_model_multi.score(test_x, test_y_multi)}')
-    
+
     # Create and train DNN models w/ pytorch
     nn_models = {}
     # create and train one DNN (binary) for each learning rate specified
     # TODO
+    for rate in learning_rates:
+        nn_models[rate] = NeuralNetwork()
     # store models as dictionaries {lr: model_object} in nn_models and training history as {lr: history} in binary_train_log
     # remember that NeuralNetwork.fit() returns training and validation histories
     nn_models['binary'] = ""# TODO
