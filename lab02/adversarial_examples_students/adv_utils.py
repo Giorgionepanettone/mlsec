@@ -30,9 +30,13 @@ class FGSM(Attack):
     def perturb(self, x, y, log=True):
         """ computes adversarial example using FGSM. Returns computed perturbation"""
         # initialize delta (the perturbation)
-        # TODO
+        perturbation = torch.rand(size = x.shape[0])
         # predict, compute loss and gradients
-        # TODO
+        self.target_model.train()
+        pred = self.target_model.forward(x)
+        loss = self.target_model.loss_fn_avg(pred, y)
+        self.target_model.backward()
+                # TODO
         # compute FGSM adv example
         # TODO
         # fix out of bounds and compute final perturbation
