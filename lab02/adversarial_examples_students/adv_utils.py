@@ -30,18 +30,19 @@ class FGSM(Attack):
     def perturb(self, x, y, log=True):
         """ computes adversarial example using FGSM. Returns computed perturbation"""
         # initialize delta (the perturbation)
-        perturbation = torch.rand(size = x.shape[0])
+        x.requires_grad = True
         # predict, compute loss and gradients
-        self.target_model.train()
+        self.target_model.eval()
         pred = self.target_model.forward(x)
-        loss = self.target_model.loss_fn_avg(pred, y)
-        self.target_model.backward()
-                # TODO
+        loss = self.target_model.loss_fn(pred, y)
+        gradients = torch.autograd.grad(loss, x)[0]
+        
         # compute FGSM adv example
-        # TODO
+        perturbation = gradients.sign() * self.epsilon
+        adv_ex = x + perturbation
         # fix out of bounds and compute final perturbation
-        # TODO
-        return perturbation
+        adv_ex = torch.clamp(adv_ex, 0.0, 1.0)
+        return adv_ex - x
 
 class IFGSM(FGSM):
     def __init__(self, model, epsilon, alpha, num_iter, targeted=False):
@@ -53,7 +54,7 @@ class IFGSM(FGSM):
     def perturb(self, x, y, log=True):
         """ computes adversarial example using IFGSM. Returns computed perturbation"""
         # initialize adv_data
-        # TODO
+        adv_data = x.copy()
         iterator = range(self.num_iter)
         if log:
             # add logging through TQDM
