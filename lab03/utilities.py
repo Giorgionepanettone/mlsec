@@ -156,7 +156,12 @@ def init_params(net):
                 init.constant(m.bias, 0)
 
 
-_, term_width = os.popen('stty size', 'r').read().split()
+import shutil
+
+# portable terminal size (works on Windows, WSL, macOS, Linux)
+size = shutil.get_terminal_size(fallback=(80, 24))
+term_width = size.columns
+term_height = size.lines
 term_width = int(term_width)
 
 TOTAL_BAR_LENGTH = 65.

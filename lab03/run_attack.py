@@ -5,7 +5,7 @@ import sys
 import torch
 import argparse
 
-from uap_attack import gen_universal_adv_perturbation
+from uap_incomplete import gen_universal_adv_perturbation
 from utilities import loader_cifar, model_cifar, evaluate
 
 parser = argparse.ArgumentParser(description='Attack and evaluation')
