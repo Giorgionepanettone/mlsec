@@ -47,4 +47,4 @@ else:
 
     # evaluate
     _, _, _, _, outputs, labels = evaluate(model, testloader, uap=uap)
-    print('Accuracy:', sum(outputs == labels) / len(labels))
+    print('Accuracy:', sum(outputs == labels) * 100/ len(labels) )

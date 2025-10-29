@@ -34,6 +34,8 @@ def normalize_fn(tensor, mean, std):
     Differentiable version of torchvision.functional.normalize
     - default assumes color channel is at dim = 1
     """
+    mean = mean.to(tensor.device)
+    std = std.to(tensor.device)
     mean = mean[None, :, None, None]
     std = std[None, :, None, None]
     return tensor.sub(mean).div(std)
@@ -90,7 +92,7 @@ def evaluate(model, loader, uap=None, n=5):
             if uap is None:
                 out = torch.nn.functional.softmax(model(x_val.cuda()), dim=1)
             else:
-                perturbed = torch.clamp((x_val + uap).to(device), 0, 1)  # clamp to [0, 1]
+                perturbed = torch.clamp((x_val.to(device) + uap).to(device), 0, 1)  # clamp to [0, 1]
                 out = torch.nn.functional.softmax(model(perturbed), dim=1)
 
             probs.append(out.cpu().numpy())

@@ -34,7 +34,14 @@ def gen_universal_adv_perturbation(
     """
     beta_tensor = torch.tensor(beta, device=device, dtype=torch.float32)
 
-
+    if device is None:
+        try:
+            # Get the device from the model's parameters
+            device = next(model.parameters()).device
+        except StopIteration:
+            # Handle models with no parameters (should be rare)
+            print("Warning: Could not determine model device. Defaulting to CPU.")
+            device = torch.device("cpu")
 
     # do any necessary device checks for cuda/cpu etc..
     model.eval()
@@ -79,7 +86,7 @@ def gen_universal_adv_perturbation(
             batch_delta.requires_grad_(True)
 
             x_pert = torch.clamp(xb + batch_delta, 0.0, 1.0)
-            p = model.forward(x_pert)
+            p = model(x_pert)
 
             loss = compute_loss(p, yb)
 
