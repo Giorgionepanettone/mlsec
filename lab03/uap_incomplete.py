@@ -3,10 +3,6 @@ import torch.nn as nn
 from typing import Optional, Tuple, List
 
 
-
-
-
-
 def gen_universal_adv_perturbation(
     model: nn.Module,
     loader: torch.utils.data.DataLoader,
@@ -36,17 +32,10 @@ def gen_universal_adv_perturbation(
         delta: tensor (C,H,W) -- learned universal perturbation (detached).
         losses: list of scalar loss values recorded (one per batch).
     """
-    beta_tensor = torch.tensor(beta, device=device)
-    def L_clamp(p, y):
-        return torch.mean(torch.min(loss_fn(p, y), beta_tensor))
+    beta_tensor = torch.tensor(beta, device=device, dtype=torch.float32)
 
-    def compute_loss(p, yb):
-        l = L_clamp(p, yb)
-        if y_target is not None:
-            return -l
-        return l
-    
- 
+
+
     # do any necessary device checks for cuda/cpu etc..
     model.eval()
 
@@ -59,41 +48,54 @@ def gen_universal_adv_perturbation(
 
     # clamp the loss
 
+    if loss_fn is None:
+        loss_fn = nn.CrossEntropyLoss(reduction="none")
+
     losses: List[float] = []
-    delta = torch.zeros(x0.shape[1:]).to(device)
-    delta.requires_grad = True
+    if uap_init is not None:
+        delta = uap_init.clone().detach().to(device)
+    else:
+        delta = torch.zeros_like(x0[0]).to(device)
+
+    def L_clamp(p, y):
+        return torch.mean(torch.min(loss_fn(p, y), beta_tensor))
+
+    def compute_loss(p, yb):
+        l = L_clamp(p, yb)
+        if y_target is not None:
+            return -l
+        return l
+
     for epoch in range(nb_epoch):
         step = eps * (step_decay ** epoch)
-        print(f"[UAP] Epoch {epoch+1}/{nb_epoch} — step size {step:.6f}")
-        
+        print(f"[UAP] Epoch {epoch + 1}/{nb_epoch} — step size {step:.6f}")
+
         for xb, yb in loader:
             xb, yb = xb.to(device), yb.to(device)
             if y_target is not None:
                 yb = torch.full_like(yb, y_target, device=device)
 
+            batch_delta = delta.unsqueeze(0).repeat(xb.size(0), 1, 1, 1).detach().to(device)
+            batch_delta.requires_grad_(True)
 
-            if delta.grad is not None:
-                delta.grad.zero_()
-
-            x_pert = torch.clamp(xb + delta, 0.0, 1.0)
+            x_pert = torch.clamp(xb + batch_delta, 0.0, 1.0)
             p = model.forward(x_pert)
 
             loss = compute_loss(p, yb)
-            loss.backward()
-            g = delta.grad.data
-            
-            g_sign = torch.mean(g).sign()
-            
-            with torch.no_grad():
-                delta.data = delta.data + step * g_sign
-                delta.data = torch.clamp(delta.data, -eps, eps)
+
+            g = torch.autograd.grad(loss, batch_delta, retain_graph=False, create_graph=False)[0]
+
+            g_sign = torch.sign(torch.mean(g, dim=0))
+
+
+            delta = delta + step * g_sign
+            delta = torch.clamp(delta, -eps, eps).detach()
             losses.append(float(loss.item()))
 
-        
-        #TODO follow the guideline on slide 17 of the current lab
+        # TODO follow the guideline on slide 17 of the current lab
 
         # optional: print recent epoch mean loss
-        recent_losses = losses[-len(loader):] if len(loader) > 0 else []
+        recent_losses = losses[-len(loader) :] if len(loader) > 0 else []
         if recent_losses:
             print(f"  epoch mean loss: {sum(recent_losses) / len(recent_losses):.4f}")
 
