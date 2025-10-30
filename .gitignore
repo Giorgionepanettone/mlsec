@@ -1,1 +1,2 @@
-*.jobliblab04/rwguard_model.joblib
+*.joblib
+lab04/rwguard_model.joblib

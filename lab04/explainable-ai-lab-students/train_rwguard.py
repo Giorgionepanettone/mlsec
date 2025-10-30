@@ -20,7 +20,7 @@ benign_train_y = [0] * len(benign_train_x)
 
 
 df_ransomware_train = pd.read_csv("./dataset/ransomware/ransomware_rwguard_features.csv", header=None)
-ransomware_train_x = df_benign_train.iloc[:, :-1].values
+ransomware_train_x = df_ransomware_train.iloc[:, :-1].values
 ransomware_train_y = [1] * len(ransomware_train_x)
 
 df_benign_test = pd.read_csv("./dataset/benign/benign_rwguard_features_3sec_test.csv", header=None)
