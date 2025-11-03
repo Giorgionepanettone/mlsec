@@ -33,8 +33,12 @@ ransomware_test_y = [1] * len(ransomware_test_x)
 
 
 # you can play with the number of estimators and tree max depth parameter to build and then explain different models. select n_jobs at lest 2 less than the number of you CPU cores
-clf = RandomForestClassifier(n_estimators=100, verbose=1, max_depth=100, n_jobs=10) #https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html
+clfs = []
 
+for i in range(5):
+    clfs.append(RandomForestClassifier(n_estimators=100, verbose=1, max_depth=5*(2**i), n_jobs=10))
+
+#clf = RandomForestClassifier(n_estimators=100, verbose=1, max_depth=100, n_jobs=10) #https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html
 
 train_x = np.concatenate((benign_train_x, ransomware_train_x), axis=0)
 train_y = np.concatenate((benign_train_y, ransomware_train_y), axis=0)
@@ -51,12 +55,20 @@ indices = rng.permutation(len(train_x))
 train_x = train_x[indices]
 train_y = train_y[indices]
 
-clf.fit(train_x, train_y)
 
-dump(clf, 'rwguard_model.joblib') # using joblib to save the model for later load and use, there are other ways to store/load models
+for i in range(5):
+    clfs[i].fit(train_x, train_y)
+    dump(clfs[i], f'rwguard_model{i}.joblib') # using joblib to save the model for later load and use, there are other ways to store/load models
+
+
+#dump(clf, 'rwguard_model.joblib') # using joblib to save the model for later load and use, there are other ways to store/load models
 
 
 #evaluate the model here on the test data and print performance metrics. See sklearn documentation https://scikit-learn.org/stable/api/sklearn.metrics.html
-y_pred = clf.predict(test_x)
+y_preds = []
 
-print("Accuracy:", metrics.accuracy_score(test_y, y_pred)) # pay attention to the ordering
+for i in range(5):
+    y_preds.append(clfs[i].predict(test_x))
+
+for i in range(5):
+    print(f"Accuracy of forest{i}:", metrics.accuracy_score(test_y, y_preds[i])) # pay attention to the ordering
