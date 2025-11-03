@@ -42,6 +42,9 @@ train_y = np.concatenate((benign_train_y, ransomware_train_y), axis=0)
 test_x = np.concatenate((benign_test_x, ransomware_test_x), axis=0)
 test_y = np.concatenate((benign_test_y, ransomware_test_y), axis=0)
 
+dump(test_x, "test_x")
+dump(test_y, "test_y")
+
 rng = np.random.default_rng()
 indices = rng.permutation(len(train_x))
 
